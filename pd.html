@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phạm Thành Đạt</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 0;
+    }
+
+    .menu-tool {
+      position: absolute;
+      top: 100px;
+      left: 30px;
+      width: 320px;
+      background: rgba(20, 20, 20, 0.95);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 0 15px #ff00cc;
+      color: #fff;
+      z-index: 999;
+      border: 2px solid #ff00cc;
+      touch-action: none;
+    }
+
+    .menu-tool h3 {
+      text-align: center;
+      color: #ff66cc;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .menu-tool input[type="text"] {
+      width: 90%;
+      margin: 0 auto;
+      display: block;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      text-align: center;
+      background-color: #1e1e1e;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .menu-tool button {
+      width: 90%;
+      margin: 0 auto;
+      display: block;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(45deg, #ff00cc, #ff6600);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ff6600;
+    }
+
+    .result-box {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid #ff00cc;
+      box-shadow: inset 0 0 10px #ff00cc;
+      text-align: center;
+    }
+
+    .du-doan {
+      font-size: 32px;
+      color: #00ffff;
+      text-shadow: 0 0 8px #00ffff;
+      margin-bottom: 6px;
+    }
+
+    .do-tin-cay {
+      font-size: 16px;
+      color: #ffcc00;
+      text-shadow: 0 0 5px #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+<iframe src="https://web.sun.win/" id="webframe"></iframe>
+
+<div class="menu-tool" id="menuTool">
+  <h3>Phạm Thành Đạt</h3>
+  <input type="text" id="cau" placeholder="Nhập từ 13 ký tự: TTXTTTX..." />
+  <button onclick="duDoan()">Xác Nhận</button>
+  <div class="result-box" id="resultBox" style="display: none;">
+    <div class="du-doan" id="ketQua">T/X</div>
+    <div class="do-tin-cay" id="tinCay">Độ tin cậy</div>
+  </div>
+</div>
+
+<script>
+  const menu = document.getElementById('menuTool');
+  let offsetX, offsetY, isDragging = false;
+
+  menu.addEventListener('touchstart', e => {
+    isDragging = true;
+    const rect = menu.getBoundingClientRect();
+    offsetX = e.touches[0].clientX - rect.left;
+    offsetY = e.touches[0].clientY - rect.top;
+  });
+
+  menu.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    menu.style.left = (e.touches[0].clientX - offsetX) + 'px';
+    menu.style.top = (e.touches[0].clientY - offsetY) + 'px';
+  });
+
+  menu.addEventListener('touchend', () => isDragging = false);
+
+  const cachedResults = {};
+
+  function batCau(chuoi) {
+    const cau = chuoi.toUpperCase().replace(/[^TX]/g, '').split('');
+    if (cau.length < 13) return { duDoan: "?", doTinCay: "❌ Nhập ít nhất 13 ký tự (T/X)" };
+
+    let scoreT = 0;
+    let scoreX = 0;
+
+    if (cau.slice(-3).every(v => v === 'T')) scoreT += 40;
+    if (cau.slice(-3).every(v => v === 'X')) scoreX += 40;
+
+    let c4 = cau.slice(-4).join('');
+    if (c4 === 'TXTX') scoreT += 30;
+    if (c4 === 'XTXT') scoreX += 30;
+
+    let c6 = cau.slice(-6).join('');
+    if (c6 === 'TTXTTX') scoreT += 25;
+    if (c6 === 'XXTXXT') scoreX += 25;
+
+    let c8 = cau.slice(-8).join('');
+    if (c8 === 'TTTXTTTX') scoreT += 15;
+    if (c8 === 'XXXTXXXT') scoreX += 15;
+
+    if (scoreT === 0 && scoreX === 0) {
+      const rand = Math.random() > 0.5 ? 'T' : 'X';
+      const tinCay = Math.floor(Math.random() * 20) + 60;
+      return {
+        duDoan: rand,
+        doTinCay: `Thấp - ${tinCay}%`
+      };
+    }
+
+    const total = scoreT + scoreX;
+    const tinCayT = Math.round((scoreT / total) * 39 + 60);
+    const tinCayX = Math.round((scoreX / total) * 39 + 60);
+
+    return scoreT > scoreX
+      ? { duDoan: 'T', doTinCay: `Cao - ${tinCayT}%` }
+      : { duDoan: 'X', doTinCay: `Cao - ${tinCayX}%` };
+  }
+
+  function duDoan() {
+    const input = document.getElementById("cau").value.trim().toUpperCase();
+    const filtered = input.replace(/[^TX]/g, '');
+
+    if (filtered.length < 13) {
+      alert("⚠️ Bạn phải nhập ít nhất 13 ký tự T hoặc X.");
+      return;
+    }
+
+    if (cachedResults[filtered]) {
+      const kq = cachedResults[filtered];
+      document.getElementById("resultBox").style.display = "block";
+      document.getElementById("ketQua").innerText = kq.duDoan;
+      document.getElementById("tinCay").innerText = kq.doTinCay;
+      return;
+    }
+
+    const kq = batCau(filtered);
+    cachedResults[filtered] = kq;
+
+    document.getElementById("resultBox").style.display = "block";
+    document.getElementById("ketQua").innerText = kq.duDoan;
+    document.getElementById("tinCay").innerText = kq.doTinCay;
+  }
+</script>
+
+</body>
+</html>
